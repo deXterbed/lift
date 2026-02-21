@@ -10,6 +10,9 @@ Requires: Input Monitoring permission (System Settings > Privacy & Security > In
 """
 
 import math
+import os
+import subprocess
+import sys
 import time
 
 from Quartz import (
@@ -46,6 +49,51 @@ VK_ANSI_C = 8
 # State
 mouse_down_pos = None
 last_copy_time = 0.0
+
+
+def _app_bundle_path():
+    """Path to the .app bundle if we're running as an app; else None."""
+    exe = os.path.abspath(sys.executable)
+    if ".app/Contents/MacOS" in exe:
+        return exe.split(".app/Contents/MacOS")[0] + ".app"
+    return None
+
+
+def _add_to_login_items():
+    """Add this app to Login Items (open at login) if running as Lift.app."""
+    bundle = _app_bundle_path()
+    if not bundle or not os.path.isdir(bundle):
+        return
+    # Get current login item paths
+    try:
+        out = subprocess.run(
+            [
+                "osascript",
+                "-e",
+                'tell application "System Events" to get the path of every login item',
+            ],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if out.returncode != 0:
+            return
+        paths = [p.strip() for p in (out.stdout or "").split(",")]
+        if bundle in paths:
+            return
+        # Add to login items (hidden so it doesn't show in Dock)
+        esc = bundle.replace("\\", "\\\\").replace('"', '\\"')
+        subprocess.run(
+            [
+                "osascript",
+                "-e",
+                f'tell application "System Events" to make login item at end with properties {{path:"{esc}", hidden:true}}',
+            ],
+            capture_output=True,
+            timeout=5,
+        )
+    except Exception:
+        pass
 
 
 def post_cmd_c():
@@ -103,16 +151,28 @@ def main():
     )
 
     if tap is None:
-        print(
-            "Failed to create event tap. Grant Input Monitoring permission:\n"
-            "  System Settings > Privacy & Security > Input Monitoring\n"
-            "  Add the app you run this from (e.g. Cursor or Terminal) and restart it."
+        msg = (
+            "Lift needs Input Monitoring to work. "
+            "Open System Settings → Privacy & Security → Input Monitoring, add Lift, then open Lift again."
         )
-        return 1
+        print(msg)
+        # When running as .app, show a dialog (avoids py2app "Launch error")
+        if _app_bundle_path():
+            try:
+                esc = msg.replace("\\", "\\\\").replace('"', '\\"')
+                subprocess.run(
+                    ["/usr/bin/osascript", "-e", f'display dialog "{esc}" with title "Lift" buttons {{"OK"}} default button 1 with icon stop'],
+                    timeout=10,
+                )
+            except Exception:
+                pass
+        return 0
 
     run_loop_source = CFMachPortCreateRunLoopSource(None, tap, 0)
     CFRunLoopAddSource(CFRunLoopGetCurrent(), run_loop_source, kCFRunLoopCommonModes)
     CGEventTapEnable(tap, True)
+
+    _add_to_login_items()
 
     print("Lift is running. Drag to select text, then release to copy. Press Ctrl+C to quit.")
     try:

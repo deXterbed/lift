@@ -9,6 +9,8 @@
 
 Drag to select text anywhere, then release — the selection is copied. Single clicks do nothing. No Dock icon; runs in the background. First run: macOS will ask for **Input Monitoring** (System Settings → Privacy & Security → Input Monitoring). Grant it for the app you run from (e.g. Terminal or Cursor), or for **Lift** if you use the standalone .app.
 
+When you open **Lift.app**, it adds itself to **Login Items** (Open at Login) once, so it will start automatically when you log in. You can turn this off in **System Settings → General → Login Items**.
+
 ## Requirements
 
 - macOS
