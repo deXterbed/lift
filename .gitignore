@@ -16,3 +16,6 @@ dist/
 
 # Build script temporary file
 pyproject.toml.bak
+
+# Icon build artifact (source: icon/lift-icon.png; rebuild with iconutil)
+icon/*.iconset/

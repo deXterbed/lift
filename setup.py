@@ -8,6 +8,7 @@ from setuptools import setup
 APP = ["lift.py"]
 OPTIONS = {
     "py2app": {
+        "iconfile": "icon/Lift.icns",
         "plist": {
             "CFBundleName": "Lift",
             "CFBundleDisplayName": "Lift",
