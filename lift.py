@@ -38,8 +38,8 @@ from Quartz import (
 
 # Minimum mouse movement (points) to treat as a selection drag rather than a click
 DRAG_THRESHOLD_PX = 5
-# Minimum seconds between copy actions
-COPY_DEBOUNCE_SEC = 0.2
+# Seconds to wait before another selection triggers copy (preserves clipboard for paste/replace)
+COPY_SUPPRESS_SEC = 5.0
 # Virtual key code for 'C'
 VK_ANSI_C = 8
 
@@ -80,7 +80,7 @@ def event_callback(proxy, event_type, event, refcon):
         mouse_down_pos = None
 
         now = time.time()
-        if dist >= DRAG_THRESHOLD_PX and (now - last_copy_time) >= COPY_DEBOUNCE_SEC:
+        if dist >= DRAG_THRESHOLD_PX and (now - last_copy_time) >= COPY_SUPPRESS_SEC:
             last_copy_time = now
             post_cmd_c()
             print("Copied!")

@@ -98,7 +98,7 @@ Share **`dist/Lift-macOS.zip`**. Users: unzip, move **Lift.app** to Applications
 Edit `lift.py`:
 
 - **`DRAG_THRESHOLD_PX`** — Minimum movement (points) to count as a selection (default: 5). Lower to 2–3 if trackpad selection doesn’t trigger.
-- **`COPY_DEBOUNCE_SEC`** — Minimum seconds between copy actions (default: 0.2).
+- **`COPY_SUPPRESS_SEC`** — Seconds after a copy before another selection will copy again (default: 5). Keeps the clipboard intact when you highlight the target to replace.
 
 ## License
 
