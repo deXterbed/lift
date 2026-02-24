@@ -11,6 +11,8 @@ Drag to select text anywhere, then release — the selection is copied. Single c
 
 When you open **Lift.app**, it adds itself to **Login Items** (Open at Login) once, so it will start automatically when you log in. You can turn this off in **System Settings → General → Login Items**.
 
+**Why does it ask for Input Monitoring again when it’s already granted?** macOS ties the permission to the **exact binary** that runs. If you granted it for **Lift.app** and then run `uv run lift.py` (or from Cursor), the process is a different executable (e.g. Python or the uv runner), so macOS asks again. Similarly, granting for Terminal/Cursor doesn’t grant for **Lift.app**. Add and enable whichever binary you actually use in **System Settings → Privacy & Security → Input Monitoring**.
+
 ## Requirements
 
 - macOS
@@ -94,6 +96,21 @@ cd dist && zip -r Lift-macOS.zip Lift.app && cd ..
 ```
 
 Share **`dist/Lift-macOS.zip`**. Users: unzip, move **Lift.app** to Applications (or keep in Downloads), open once and grant Input Monitoring when prompted.
+
+## Uninstall (stop permission prompts)
+
+If you removed Lift but macOS still asks for **Input Monitoring** or the app seems to start at login, clean up:
+
+1. **Launch Agent (if you set it up)** — Stop the agent and remove the plist so it doesn’t run at login:
+   ```bash
+   launchctl bootout "gui/$(id -u)/com.user.lift"   # optional; may say "No such process" if not loaded
+   rm ~/Library/LaunchAgents/com.user.lift.plist
+   ```
+   If `launchctl unload` or `bootout` fails, removing the plist is enough — it won’t load again after you log out and back in.
+
+2. **Login Items** — Open **System Settings → General → Login Items** and remove **Lift** if it appears (it may point to a deleted app).
+
+3. **Input Monitoring** — In **System Settings → Privacy & Security → Input Monitoring**, you can remove **Lift** or the **Python** entry so macOS stops prompting.
 
 ## Tuning
 

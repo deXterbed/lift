@@ -23,6 +23,8 @@ from Quartz import (
     CGEventSetFlags,
     CGEventTapCreate,
     CGEventTapEnable,
+    CGPreflightListenEventAccess,
+    CGRequestListenEventAccess,
     CFRunLoopAddSource,
     CFRunLoopGetCurrent,
     CFRunLoopRunInMode,
@@ -141,22 +143,42 @@ def event_callback(proxy, event_type, event, refcon):
 def main():
     event_mask = CGEventMaskBit(kCGEventLeftMouseDown) | CGEventMaskBit(kCGEventLeftMouseUp)
 
-    tap = CGEventTapCreate(
-        kCGSessionEventTap,
-        kCGHeadInsertEventTap,
-        kCGEventTapOptionListenOnly,
-        event_mask,
-        event_callback,
-        None,
-    )
+    # Only prompt when we actually lack permission. If permission is granted, tap creation
+    # can still fail briefly (e.g. at login); retry before showing any dialog.
+    has_listen_access = CGPreflightListenEventAccess()
+    if not has_listen_access:
+        CGRequestListenEventAccess()
+        time.sleep(1.5)
+        has_listen_access = CGPreflightListenEventAccess()
+
+    tap = None
+    for attempt in range(3):
+        tap = CGEventTapCreate(
+            kCGSessionEventTap,
+            kCGHeadInsertEventTap,
+            kCGEventTapOptionListenOnly,
+            event_mask,
+            event_callback,
+            None,
+        )
+        if tap is not None:
+            break
+        if has_listen_access:
+            time.sleep(1.0)
+        else:
+            break
 
     if tap is None:
-        msg = (
-            "Lift needs Input Monitoring to work. "
-            "Open System Settings → Privacy & Security → Input Monitoring, add Lift, then open Lift again."
-        )
+        if has_listen_access:
+            msg = (
+                "Lift couldn’t start the event tap. Try logging out and back in, or restart Lift."
+            )
+        else:
+            msg = (
+                "Lift needs Input Monitoring to work. "
+                "Open System Settings → Privacy & Security → Input Monitoring, add Lift, then open Lift again."
+            )
         print(msg)
-        # When running as .app, show a dialog (avoids py2app "Launch error")
         if _app_bundle_path():
             try:
                 esc = msg.replace("\\", "\\\\").replace('"', '\\"')
